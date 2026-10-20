@@ -1,0 +1,36 @@
+# Requires an enabled SPI controller, correct radio GPIO and actual SX1262/SX127x HAT.
+services:
+  companion:
+    build:
+      context: ./companion
+    restart: unless-stopped
+    environment:
+      MESHCORE_DATA_DIR: /data
+      RPI_COMPANION_TCP_PORT: "5000"
+      RPI_RADIO_DRIVER: "${RPI_RADIO_DRIVER:-sx1262}"
+      RPI_FREQ_HZ: "${RPI_FREQ_HZ:?Set verified legal frequency in .env}"
+      RPI_SF: "${RPI_SF:-8}"
+      RPI_BW_HZ: "${RPI_BW_HZ:-62500}"
+      RPI_CR: "${RPI_CR:-8}"
+      RPI_TX_DBM: "${RPI_TX_DBM:-14}"
+      RPI_SPI_BUS: "${RPI_SPI_BUS:-0}"
+      RPI_SPI_CS: "${RPI_SPI_CS:-0}"
+      RPI_CS_PIN: "${RPI_CS_PIN:-21}"
+      RPI_RESET_PIN: "${RPI_RESET_PIN:-18}"
+      RPI_BUSY_PIN: "${RPI_BUSY_PIN:-20}"
+      RPI_IRQ_PIN: "${RPI_IRQ_PIN:-16}"
+      RPI_TXEN_PIN: "${RPI_TXEN_PIN:--1}"
+      RPI_RXEN_PIN: "${RPI_RXEN_PIN:--1}"
+      RPI_USE_TCXO: "${RPI_USE_TCXO:-0}"
+      RPI_USE_DIO2_RF: "${RPI_USE_DIO2_RF:-0}"
+    devices:
+      - /dev/spidev0.0:/dev/spidev0.0
+      - /dev/gpiochip0:/dev/gpiochip0
+    volumes:
+      - ./data/companion:/data
+  remoteterm:
+    environment:
+      MESHCORE_TCP_HOST: companion
+      MESHCORE_TCP_PORT: "5000"
+    depends_on:
+      - companion
