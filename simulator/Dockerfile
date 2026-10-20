@@ -1,5 +1,6 @@
 FROM python:3.12-alpine
 WORKDIR /app
-COPY server.py /app/server.py
+COPY protocol.py companion.py /app/
 USER 65534:65534
-CMD ["python", "-u", "/app/server.py"]
+EXPOSE 5000
+CMD ["python", "-u", "/app/companion.py"]
