@@ -1,16 +1,29 @@
-# Integration status
+# Integration status — 2026-10-19
 
-- RemoteTerm upstream Docker image and TCP environment variables: verified by reading upstream README.
-- MeshCoreRPI native Companion and SX1262/SX127x configuration: verified by reading upstream README.
-- Native Companion TCP transport framing and compatibility with RemoteTerm: NOT verified.
-- Docker startup on Raspberry Pi 4: NOT tested.
-- `simulator/server.py`: TCP framing observer only, NOT a MeshCore Companion emulator. It does not reply to commands, encrypt, route or implement multihop.
-- End-to-end chat/bots: NOT tested.
-- Radio operation: blocked by lack of HAT.
+## Source reviewed
+- RemoteTerm supports TCP using MESHCORE_TCP_HOST and MESHCORE_TCP_PORT=5000 (upstream README).
+- MeshCoreRPI native Companion implements TCP framing with '<' client-to-device and '>' device-to-client, 16-bit little-endian length, in LinuxTcpSerialInterface.cpp.
+- MeshCoreRPI native Companion requires successful radio_init() before opening TCP.
 
-## Critical next engineering task
-Read and map the native Companion TCP bridge source and RemoteTerm's meshcore client framing. Implement a protocol-correct fake Companion with golden fixtures from upstream, then integration-test the real RemoteTerm against it. Do not call a socket listener a functional simulator.
+## Delivered
+- RemoteTerm Docker Compose baseline.
+- Protocol-aware Python simulated Companion: app start, device query, self info, empty contacts, channel get/set, channel TX→queued local loopback RX, battery/time and unsupported-command errors.
+- Separate persistent RemoteTerm data directory.
+- Installer and doctor shell scripts; Compose overlay for simulator.
+- Unit tests for frame codec and basic simulated commands.
 
-## How to run observer
-`docker compose -f compose.yaml -f compose.simulator.yaml up -d --build`
-RemoteTerm may report disconnected or handshake timeout; this is expected until real protocol implementation.
+## NOT validated
+- Running Docker images on Raspberry Pi 4; GitHub Actions result not inspected.
+- RemoteTerm full handshake and actual chat rendering. Upstream command layout/version variations may require changes.
+- Bots in RemoteTerm UI, persistence and any encryption.
+- Native Companion image build, radio access, real TX/RX, multihop.
+
+**Simulation is explicitly fake loopback; it does not implement LoRa, cryptography, packet forwarding, or mesh peers.** Do not mistake TCP connection for end-to-end PASS.
+
+## Local smoke test on Pi
+```sh
+bash scripts/install.sh
+bash scripts/doctor.sh
+docker compose -f compose.yaml -f compose.simulator.yaml logs --tail=100
+```
+Choose simulator in installer. The web page is bound to localhost by default; set RASPMESH_BIND to the Pi LAN IPv4 address for remote access. Keep bots disabled until HTTPS and authentication are configured.
