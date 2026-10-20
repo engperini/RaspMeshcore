@@ -87,3 +87,17 @@ O usuário pode optar por usar o aplicativo da Seeed Studio **em vez da interfac
 - Validar envio, recebimento, canais, contatos, bots e multihop a partir do app; documentar matriz por versão e plataforma Android/iOS.
 - Manter a interface web como alternativa e painel de administração, não como substituto obrigatório do app.
 - Critério de aprovação: vídeo/logs e roteiro reproduzível de conexão real entre app e Pi, com distinção entre testes simulados e RF.
+
+
+## Descoberta confirmada: referência Seeed Studio (fonte primária)
+Fonte: https://wiki.seeedstudio.com/get_started_with_meshcore_remote_terminal/
+- A Seeed documenta **RemoteTerm**, projeto aberto de **jkingsman/Remote-Terminal-for-MeshCore**: https://github.com/jkingsman/Remote-Terminal-for-MeshCore . Não se trata de app proprietário da Seeed. Esta é a implementação **preferencial**; as outras variantes são referências secundárias.
+- A documentação Seeed instala RemoteTerm no Raspberry Pi OS Lite 64-bit com script `./scripts/setup/install_docker.sh` e `docker compose up -d`. **Reutilizar Compose/instalador upstream sempre que possível**, sem recriar desnecessariamente a UI.
+- Funcionalidades documentadas: interface web mobile, cache de pacotes, contatos/canais, mapas e visualizador mesh, trace multihop, busca, bots Python editáveis na UI, MQTT, webhooks, Apprise, SQS e Home Assistant.
+- Transporte: a Seeed demonstra Serial Companion via USB em XIAO ESP32-S3 + SX1262; declara que RemoteTerm também suporta companions TCP e Bluetooth. Isso **não comprova** que MeshCoreRPI ofereça TCP compatível: verificar na implementação e testar.
+- **Arquitetura-alvo:** Raspberry Pi 4 + LoRa HAT SPI/GPIO + Companion Linux compatível + RemoteTerm original em Docker; sem ESP32 adicional e sem app celular obrigatório. A UI original do RemoteTerm é o cliente principal.
+- Rever decisões anteriores: não criar frontend/backend/bots substitutos se o RemoteTerm já atende; criar apenas adaptadores e painel auxiliar estritamente necessários. Evitar bifurcação do upstream sem necessidade.
+- Verificar preservação de contatos/chaves quando RemoteTerm assume gerenciamento do Companion; o guia alerta que RemoteTerm passa a governar a sincronização de contatos/canais.
+- Validar modos: Docker RemoteTerm com Companion TCP simulado primeiro; depois Companion Linux real sem rádio, por fim HAT. Documentar limitações do simulador.
+- Ajustar critérios de aceitação: interface original abre no navegador, bots Python podem ser criados e acionados com mensagens de teste, TCP Companion↔RemoteTerm funciona, persistência em volumes e recuperação após reboot.
+- Não alegar que o aplicativo móvel nativo da Seeed é suportado: o produto documentado é uma aplicação **web**.
