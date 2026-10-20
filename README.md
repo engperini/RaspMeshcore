@@ -1,40 +1,193 @@
 # RaspMeshcore
 
-Docker-first integration project for Raspberry Pi 4 + native MeshCore Companion + RemoteTerm web UI.
+RaspMeshcore transforma um **Raspberry Pi 4 + LoRa HAT/SX1262** em um terminal MeshCore autônomo.
 
-## Stage 1 — RemoteTerm container baseline (delivered)
+O objetivo principal não é usar o Pi apenas como servidor para um celular. O próprio Raspberry Pi será o equipamento final: **display touch + mensagens + canais + contatos + bots + rádio LoRa**, com acesso remoto/LAN apenas como recurso secundário.
 
-This stage packages **RemoteTerm only** using the upstream published image. It does **not** yet bundle or start MeshCoreRPI, emulate a radio, or demonstrate successful Companion connectivity. No hardware is required to inspect/start this service, but messaging requires a compatible Companion TCP server.
+## Produto alvo
 
-Prerequisites: Raspberry Pi OS with working Docker Engine and Docker Compose plugin. No host package upgrade is performed.
-
-```bash
-git clone https://github.com/engperini/RaspMeshcore.git
-cd RaspMeshcore
-cp .env.example .env
-docker compose config
-docker compose pull
-docker compose up -d
-docker compose ps
-docker compose logs --tail=100 remoteterm
+```text
+Power ON
+   ↓
+Raspberry Pi OS 64-bit com Desktop
+   ↓
+Docker Compose sobe os serviços
+   ↓
+Companion/Radio Core conecta ao SX1262 HAT
+   ↓
+RemoteTerm / RaspMeshcore UI fica pronta
+   ↓
+Chromium abre automaticamente em modo KIOSK
+   ↓
+Terminal MeshCore pronto no próprio display
 ```
 
-Default web bind is localhost only: `http://127.0.0.1:8080` **on the Pi**. For LAN access change `RASPMESH_BIND` to the Pi's LAN IPv4 address in `.env` after securing access. Do **not** expose RemoteTerm directly to the internet: its bot editor can execute arbitrary Python. The baseline disables bots by default; enable only after authentication and HTTPS are deployed.
+O terminal deve operar sem:
 
-Companion TCP is expected on `host.docker.internal:5000` (mapped to Docker host gateway). If Companion is not running, RemoteTerm may show disconnected; this is expected at this stage.
+- smartphone;
+- companion app externo;
+- segundo MCU;
+- computador conectado;
+- Internet para as funções MeshCore básicas.
 
-```bash
-docker compose down
+A mesma interface poderá continuar disponível na LAN em `http://raspmeshcore.local` ou pelo IP do Pi, mas isso é **secundário**.
+
+## Arquitetura
+
+```text
+┌──────────────────────── Raspberry Pi 4 ────────────────────────────┐
+│                                                                    │
+│ Raspberry Pi OS 64-bit com Desktop                                 │
+│ ├─ display/touch                                                   │
+│ ├─ Chromium em modo kiosk                                          │
+│ ├─ SSH                                                             │
+│ ├─ acesso remoto gráfico opcional                                  │
+│ └─ Docker + Compose                                                │
+│                                                                    │
+│ Containers / serviços                                              │
+│ ├─ RemoteTerm / UI                                                 │
+│ ├─ Companion / radio-core Linux                                    │
+│ ├─ simulador sem HAT                                               │
+│ ├─ bots                                                            │
+│ └─ persistência/configuração                                       │
+│                                                                    │
+│ Companion/radio-core ── SPI/GPIO ──> SX1262 HAT ──> MeshCore       │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
-Persistent data: `./data/remoteterm`. Back up before upgrading. `latest` is used for initial exploration, not a reproducible production release; pin a verified digest/tag in the next stage.
+### UI local e servidor são a mesma aplicação
 
-## Upstream evidence
-- https://github.com/jkingsman/Remote-Terminal-for-MeshCore (TCP host/port env, Docker Hub image, warnings)
-- https://github.com/dabeani/MeshCoreRPI (native Pi Companion/repeater and SPI radio configuration)
-- https://wiki.seeedstudio.com/get_started_with_meshcore_remote_terminal/
+No próprio display:
 
-## Next stage
-Containerize native MeshCoreRPI Companion with a reproducible ARM64 build and verify its actual TCP transport compatibility with RemoteTerm. Then implement a real protocol-aware simulation mode for no-HAT testing. Do not claim mesh messaging works until integration tests pass.
+```text
+Chromium kiosk → http://127.0.0.1:8080
+```
 
-See [PLAN.md](PLAN.md).
+Opcionalmente, na LAN:
+
+```text
+outro dispositivo → http://raspmeshcore.local:8080
+```
+
+Não haverá uma aplicação separada para o display e outra para a rede.
+
+## Display
+
+O modelo do display será escolhido depois. Isso **não bloqueia o desenvolvimento**.
+
+Primeiro trabalharemos com:
+
+1. SSH para configuração, Docker, logs e diagnóstico;
+2. acesso web pela rede para testar a interface;
+3. TeamViewer, RustDesk, VNC ou equivalente como acesso gráfico opcional ao desktop;
+4. simulador de rádio para desenvolver sem HAT.
+
+Quando o display for escolhido, adicionaremos somente o profile de hardware: resolução, rotação, touch, escala, teclado virtual, brilho e montagem.
+
+## Docker-first
+
+A meta continua sendo manter a aplicação o mais containerizada possível. No host ficam somente os elementos que realmente pertencem ao sistema operacional:
+
+- Raspberry Pi OS;
+- kernel/drivers;
+- display/touch;
+- Docker;
+- Chromium/kiosk;
+- SSH e acesso remoto opcional.
+
+Radio core, RemoteTerm/UI, simulador, bots e persistência devem ficar em containers sempre que o acesso ao hardware permitir. Para o HAT, preferir `/dev/spidev*`, `/dev/gpiochip*`, grupos e capabilities específicas; evitar `privileged: true` como padrão.
+
+## Estratégia MeshCore
+
+Base técnica pesquisada:
+
+- [Remote-Terminal-for-MeshCore](https://github.com/jkingsman/Remote-Terminal-for-MeshCore) — UI web, mensagens, contatos/canais, bots e transporte Companion.
+- [MeshCoreRPI](https://github.com/dabeani/MeshCoreRPI) — candidato para Companion Linux nativo no Raspberry Pi.
+- [Guia Seeed Studio / RemoteTerm](https://wiki.seeedstudio.com/get_started_with_meshcore_remote_terminal/) — referência de integração e experiência.
+
+A arquitetura desejada é:
+
+```text
+Display touch
+    ↓
+Chromium kiosk
+    ↓
+RemoteTerm / UI local
+    ↓
+Companion Linux no próprio Pi
+    ↓
+SPI/GPIO
+    ↓
+SX1262 HAT
+    ↓
+MeshCore
+```
+
+RemoteTerm deve ser reutilizado enquanto atender ao produto. Não vamos recriar frontend/backend/bots sem necessidade. Se alguma função local/touch não for adequada, criaremos apenas a camada/adaptação necessária.
+
+## Bots
+
+Bots são parte central do produto, não apenas um extra.
+
+O usuário deve poder criar/habilitar bots no próprio Raspberry. Prioridade inicial é aproveitar o sistema de bots do RemoteTerm e validar:
+
+- trigger por mensagem;
+- resposta automática;
+- scripts Python;
+- logs;
+- habilitar/desabilitar;
+- persistência;
+- rate limit;
+- proteção contra loops/flood.
+
+Integrações posteriores podem incluir MQTT, HTTP, sensores, GPIO/I²C, GPS, Home Assistant e LLM.
+
+## Estado atual
+
+### Stage 1 — RemoteTerm container baseline
+
+Já existe baseline Docker do RemoteTerm usando a imagem upstream.
+
+Este estágio **não comprova ainda**:
+
+- Companion Linux ↔ RemoteTerm;
+- TX/RX MeshCore;
+- criptografia;
+- multihop;
+- acesso real ao HAT.
+
+O próximo passo é validar toda a pilha possível sem HAT usando Companion/simulador e, depois, substituir o simulador pelo SX1262 real.
+
+## Desenvolvimento atual sem display/HAT
+
+O Raspberry pode ser preparado agora e usado remotamente. O fluxo inicial será:
+
+```text
+PC → SSH → Raspberry Pi
+PC → navegador → RemoteTerm/RaspMeshcore
+                    ↓
+             Companion/simulador
+```
+
+Depois:
+
+```text
+Display touch no Pi
+       ↓
+Chromium kiosk
+       ↓
+mesma aplicação
+       ↓
+Companion Linux
+       ↓
+SX1262
+```
+
+## Documentação
+
+- [PLAN.md](PLAN.md) — plano de execução para o agente.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — arquitetura do appliance, kiosk, rede, containers e hardware.
+
+## Regra principal do projeto
+
+**O Raspberry Pi deve continuar recebendo mensagens, executando bots e operando o rádio mesmo sem celular, sem navegador remoto e com o display apagado.**
