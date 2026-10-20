@@ -152,7 +152,7 @@ cd RaspMeshcore
 bash scripts/install.sh
 ```
 
-Escolha **2** para subir RemoteTerm + Companion simulado. Abra `http://127.0.0.1:8080` no navegador do próprio Pi. Para abrir de outro computador na LAN, edite `.env`, configure `RASPMESH_BIND` com o IPv4 local do Pi e execute novamente o instalador. Não publique a porta na Internet.
+Escolha **2** para subir RemoteTerm + Companion simulado. Abra `http://127.0.0.1:8080` no navegador do próprio Pi. Para abrir de outro computador ou smartphone na mesma rede, edite `.env`, configure `RASPMESH_BIND` com o IPv4 local do Pi e execute novamente o instalador. Acesse `http://IP_DO_PI:8080` no outro dispositivo. Sem autenticação configurada, use apenas em uma rede local confiável; não publique a porta na Internet.
 
 Diagnóstico:
 ```bash
