@@ -1,4 +1,4 @@
-# Development-only: TCP framing observer, not a MeshCore protocol simulator.
+# Protocol-aware development simulator. Loopback TX/RX; no RF, no crypto, no multihop.
 services:
   simulator:
     build: ./simulator
