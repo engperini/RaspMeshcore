@@ -713,3 +713,19 @@ O MVP só está pronto quando:
 8. Manter Docker como caminho padrão.
 9. Registrar decisões técnicas.
 10. Atualizar este plano conforme cada fase for concluída.
+
+
+## 16. Prioridade operacional aprovada (2026-10-19)
+1. **P0** Simulador Companion compatível com RemoteTerm sem HAT; não basta observar TCP. Implementação inicial parcial com comandos básicos e loopback local; aguarda teste integrado real.
+2. **P1** Executar testes automatizados de conexão, handshake, TX/RX e persistência usando o RemoteTerm upstream, corrigir divergências de versão e só então marcar PASS.
+3. **P2** Habilitar/testar bots originais RemoteTerm com autenticação e HTTPS adequados.
+4. **P3** Kiosk/autostart no Raspberry Pi OS Desktop, com espera de saúde da UI e recuperação de falhas.
+5. **P4** Container Companion nativo e validação de HAT SX1262, RF e multihop físico.
+
+### Instalação e configuração
+- Entregar `scripts/install.sh` como entrada assistida, `scripts/doctor.sh` como diagnóstico, `.env.example` como referência e Compose overlay por modo.
+- Não atualizar o Raspberry Pi OS, nem instalar toolchain no host. Docker Engine/Compose e Chromium no OS Desktop são pré-requisitos.
+- O instalador deve ser idempotente e recusar execução sem Docker/Compose.
+- O modo simulador deve ficar identificado como SEM RF, sem criptografia e sem multihop real; não prometer chat funcional antes do teste RemoteTerm completo.
+- O acesso remoto pela LAN é opcional e exige bind explícito; bots ficam desativados por padrão devido à execução arbitrária de Python.
+- Antes de cada entrega: revisar arquivos, executar testes, inspecionar resultado da CI e atualizar `docs/STATUS.md`.
