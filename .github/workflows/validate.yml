@@ -7,7 +7,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate Compose syntax
+      - name: Validate baseline Compose
         run: docker compose --env-file .env.example config --quiet
-      - name: Check required files
-        run: test -s README.md && test -s PLAN.md && test -s compose.yaml
+      - name: Validate simulator Compose
+        run: docker compose --env-file .env.example -f compose.yaml -f compose.simulator.yaml config --quiet
+      - name: Validate hardware Compose
+        env:
+          RPI_FREQ_HZ: "915000000"
+        run: docker compose --env-file .env.example -f compose.yaml -f compose.hardware.yaml config --quiet
+      - name: Python tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Build framing observer image
+        run: docker build -t raspmeshcore-observer:test ./simulator
