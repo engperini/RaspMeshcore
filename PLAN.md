@@ -77,3 +77,13 @@ GO apenas se compilação e serviços funcionarem no Pi 4, interface Companion�
 
 ## Ordem de implementação revisada
 Na Fase 0 verificar especificamente viabilidade de containerizar MeshCoreRPI e RemoteTerm e descobrir dependências de kernel/radio. Na Fase 1 criar o esqueleto Docker Compose com simulador, healthchecks e UI mínima; em seguida executar testes de integração antes de avançar em UX/bots. Não aguardar aquisição de HAT.
+
+
+## Requisito adicional: aplicativo oficial utilizado pela Seeed Studio
+O usuário pode optar por usar o aplicativo da Seeed Studio **em vez da interface web própria**. Tratar esse caminho como objetivo de primeira classe, mas ainda NÃO validado.
+- Fase 0: identificar nome, versão, fabricante, documentação e compatibilidade MeshCore do aplicativo concreto citado; diferenciar app da Seeed, MeshCore oficial e apps de terceiros.
+- Auditar quais transportes o app aceita (BLE, USB, TCP, Wi-Fi, gateway), descoberta, pairing, identidade, framing, autenticação e recursos de bots.
+- Prototipar conexão app ↔ Companion no Raspberry Pi via transporte oficialmente suportado. Se TCP não for aceito, estudar ponte BLE/Wi-Fi ou gateway com limitações explícitas; não afirmar suporte inexistente.
+- Validar envio, recebimento, canais, contatos, bots e multihop a partir do app; documentar matriz por versão e plataforma Android/iOS.
+- Manter a interface web como alternativa e painel de administração, não como substituto obrigatório do app.
+- Critério de aprovação: vídeo/logs e roteiro reproduzível de conexão real entre app e Pi, com distinção entre testes simulados e RF.
