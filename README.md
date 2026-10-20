@@ -142,6 +142,26 @@ O usuário deve poder criar/habilitar bots no próprio Raspberry. Prioridade ini
 
 Integrações posteriores podem incluir MQTT, HTTP, sensores, GPIO/I²C, GPS, Home Assistant e LLM.
 
+## Instalação inicial no Raspberry Pi (simulação sem HAT)
+
+Pré-requisitos: Raspberry Pi OS 64-bit com Desktop e Docker Engine + Compose já instalados. O script não atualiza o OS nem instala pacotes do host.
+
+```bash
+git clone https://github.com/engperini/RaspMeshcore.git
+cd RaspMeshcore
+bash scripts/install.sh
+```
+
+Escolha **2** para subir RemoteTerm + Companion simulado. Abra `http://127.0.0.1:8080` no navegador do próprio Pi. Para abrir de outro computador na LAN, edite `.env`, configure `RASPMESH_BIND` com o IPv4 local do Pi e execute novamente o instalador. Não publique a porta na Internet.
+
+Diagnóstico:
+```bash
+bash scripts/doctor.sh
+docker compose -f compose.yaml -f compose.simulator.yaml logs --tail=100
+```
+
+**Atenção:** simulador de protocolo parcial com loopback de canal; não representa criptografia, multihop nem RF. A compatibilidade completa com RemoteTerm e os bots ainda depende de teste integrado. Bots ficam desativados por padrão por segurança. O instalador não configura ainda kiosk/autostart.
+
 ## Estado atual
 
 ### Stage 1 — RemoteTerm container baseline
