@@ -1,0 +1,13 @@
+# Development-only: TCP framing observer, not a MeshCore protocol simulator.
+services:
+  simulator:
+    build: ./simulator
+    restart: unless-stopped
+    expose:
+      - "5000"
+  remoteterm:
+    environment:
+      MESHCORE_TCP_HOST: simulator
+      MESHCORE_TCP_PORT: "5000"
+    depends_on:
+      - simulator
