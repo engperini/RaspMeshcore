@@ -1,0 +1,13 @@
+name: Validate packaging
+on:
+  push:
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose syntax
+        run: docker compose --env-file .env.example config --quiet
+      - name: Check required files
+        run: test -s README.md && test -s PLAN.md && test -s compose.yaml
