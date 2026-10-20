@@ -1,0 +1,15 @@
+services:
+  remoteterm:
+    image: docker.io/jkingsman/remoteterm-meshcore:latest
+    restart: unless-stopped
+    ports:
+      - "${RASPMESH_BIND:-127.0.0.1}:8080:8000"
+    environment:
+      MESHCORE_TCP_HOST: "${MESHCORE_TCP_HOST:-host.docker.internal}"
+      MESHCORE_TCP_PORT: "${MESHCORE_TCP_PORT:-5000}"
+      MESHCORE_DATABASE_PATH: /app/data/meshcore.db
+      MESHCORE_DISABLE_BOTS: "${MESHCORE_DISABLE_BOTS:-true}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./data/remoteterm:/app/data
