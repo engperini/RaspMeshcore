@@ -57,7 +57,7 @@ def radio_config_valid(path):
             if not line or line.startswith("#") or "=" not in line:
                 continue
             key, value = line.split("=", 1)
-            entries[key.strip()] = value.strip().strip("\\\"").strip("\'")
+            entries[key.strip()] = value.strip().strip(chr(34)).strip(chr(39))
         return all(entries.get(k) for k in ("RPI_FREQ_HZ", "RPI_BW_HZ", "RPI_SF", "RPI_CR", "RPI_TX_DBM"))
     except OSError:
         return False
