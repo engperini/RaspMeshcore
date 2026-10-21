@@ -233,3 +233,24 @@ Documentação operacional:
 - [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) — critérios antes de anunciar instalação completa.
 
 Não utilize `git reset --hard` para atualizar uma instalação. Faça backup de `.env` e `data/remoteterm` antes de alterar perfis Compose. Não exponha a interface ou a porta 5000 à Internet sem controles adicionais.
+
+
+### Preparação experimental com um comando (clone limpo)
+
+Requer Docker Engine + Compose, acesso `sudo` e Raspberry Pi OS 64-bit. Não instala Docker automaticamente. A partir da branch USB:
+
+```bash
+git clone -b feature/meshstick-usb-ch341 https://github.com/engperini/RaspMeshcore.git
+cd RaspMeshcore
+bash scripts/setup-usb.sh
+```
+
+O comando instala dependências nativas, compila o Companion CH341, configura o supervisor systemd e inicia RemoteTerm, simulador e roteador TCP. O modo inicial é **simulador**, inclusive sem MeshStick. Configure `RASPMESH_BIND` em `.env` para acessar pela LAN; o padrão é loopback. Repetir o comando deve preservar o banco `data/remoteterm` e o checkout isolado; esse fluxo ainda requer teste em instalação limpa e CI final. **Não implica transmissão RF funcional.**
+
+Diagnóstico rápido:
+
+```bash
+sudo systemctl is-active raspmeshcore-radio
+cat /tmp/raspmeshcore-radio.json
+sudo docker compose -p raspmeshcore -f compose.yaml -f compose.simulator.yaml -f compose.radio-router.yaml ps
+```
