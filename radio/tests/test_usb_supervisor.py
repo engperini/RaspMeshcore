@@ -27,6 +27,15 @@ class SupervisorTests(unittest.TestCase):
             (usb / "idProduct").write_text("0000\n")
             self.assertEqual(mod.devices(root), [])
 
+    def test_explicit_radio_config_required(self):
+        with tempfile.TemporaryDirectory() as td:
+            config = Path(td) / "radio.env"
+            self.assertFalse(mod.radio_config_valid(config))
+            config.write_text("RPI_FREQ_HZ=915000000\\n")
+            self.assertFalse(mod.radio_config_valid(config))
+            config.write_text("RPI_FREQ_HZ=915000000\\nRPI_BW_HZ=62500\\nRPI_SF=8\\nRPI_CR=8\\nRPI_TX_DBM=14\\n")
+            self.assertTrue(mod.radio_config_valid(config))
+
     def test_missing_usb_stays_waiting(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
