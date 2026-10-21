@@ -49,6 +49,19 @@ def stop(proc):
         proc.kill()
         proc.wait()
 
+def radio_config_valid(path):
+    try:
+        entries = {}
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            entries[key.strip()] = value.strip().strip("\\\"").strip("\'")
+        return all(entries.get(k) for k in ("RPI_FREQ_HZ", "RPI_BW_HZ", "RPI_SF", "RPI_CR", "RPI_TX_DBM"))
+    except OSError:
+        return False
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--binary", type=Path, required=True)
@@ -81,7 +94,7 @@ def main():
                 attempts = 0
                 next_retry = 0.0
                 state, detail = "waiting_usb", "MeshStick USB not detected"
-            elif not args.radio_config.is_file():
+            elif not radio_config_valid(args.radio_config):
                 stop(proc)
                 proc = None
                 state, detail = "needs_configuration", str(args.radio_config)
