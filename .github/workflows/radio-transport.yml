@@ -13,7 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build and test transport contract
+      - name: Install libusb headers
+        run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev pkg-config
+      - name: Build and test transport
         run: |
-          g++ -std=c++17 -Wall -Wextra -Werror -pedantic radio/tests/transport_contract_test.cpp -o /tmp/transport-contract-test
-          /tmp/transport-contract-test
+          cmake -S radio -B /tmp/raspmeshcore-radio -DCMAKE_BUILD_TYPE=Debug
+          cmake --build /tmp/raspmeshcore-radio --parallel
+          ctest --test-dir /tmp/raspmeshcore-radio --output-on-failure
