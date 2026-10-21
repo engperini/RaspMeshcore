@@ -31,3 +31,14 @@ Run `bash scripts/meshstick-preflight.sh` on the Pi. This script only enumerates
 - RemoteTerm: https://github.com/jkingsman/Remote-Terminal-for-MeshCore
 
 Do not report MeshCore USB compatibility as proven before actual integration testing.
+
+## Source audit (2026-10-20)
+
+Inspected upstream `dabeani/MeshCoreRPI` files:
+- `host/rpi_native_cli/src/SX1262LinuxRadio.cpp`
+- `host/rpi_native_cli/src/SX1262LinuxRadio.h`
+- `host/rpi_native_cli/src/LinuxRadioBase.h`
+
+The native SX1262 class currently opens `/dev/spidev*` and manipulates Raspberry sysfs GPIO directly. Its SPI transaction method controls CS and uses `SPI_IOC_MESSAGE(1)`. USB CH341 cannot be selected merely by changing `RPI_SPI_DEV_PREFIX`: the upstream driver requires a transport refactor.
+
+An isolated C++ transport contract and mock test now live in `radio/include/RadioTransport.h` and `radio/tests/transport_contract_test.cpp`, with GitHub Actions compile/test. This is a **contract only**, not a CH341 hardware driver. Next: implement libusb CH341 backend, integrate through a pinned/forked upstream Companion source, validate USB VID:PID and board GPIO mapping. The current app is not changed.
