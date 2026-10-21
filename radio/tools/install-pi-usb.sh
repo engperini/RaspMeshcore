@@ -17,12 +17,16 @@ echo "[3/6] MeshCoreRPI pinned checkout"
 if [[ ! -d "$UPSTREAM/.git" ]]; then
   git clone https://github.com/dabeani/MeshCoreRPI.git "$UPSTREAM"
 fi
-if [[ -n "$(git -C "$UPSTREAM" status --porcelain)" ]]; then
-  echo "ERROR: isolated build checkout contains local changes; refusing to overwrite" >&2
-  exit 1
+if [[ "$(git -C "$UPSTREAM" rev-parse HEAD)" != "$PIN" ]]; then
+  if [[ -n "$(git -C "$UPSTREAM" status --porcelain)" ]]; then
+    echo "ERROR: checkout differs from pinned version and has local changes; refusing to overwrite" >&2
+    exit 1
+  fi
+  git -C "$UPSTREAM" fetch origin "$PIN"
+  git -C "$UPSTREAM" checkout --detach "$PIN"
+else
+  echo "Pinned upstream already present; preserving CH341 overlay"
 fi
-git -C "$UPSTREAM" fetch origin "$PIN"
-git -C "$UPSTREAM" checkout --detach "$PIN"
 echo "[4/6] CH341 overlay and native build"
 MESHCORE_RPI_DIR="$UPSTREAM" bash "$ROOT/radio/tools/build-usb-companion.sh"
 BIN="$UPSTREAM/.pio/build/RaspberryPiMC_native_companion/program"
@@ -47,7 +51,8 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 sudo systemctl daemon-reload
-sudo systemctl enable --now raspmeshcore-radio.service
+sudo systemctl enable raspmeshcore-radio.service
+sudo systemctl restart raspmeshcore-radio.service
 echo "[6/6] Service status"
 sudo systemctl --no-pager --full status raspmeshcore-radio.service || true
 echo "Radio status: /tmp/raspmeshcore-radio.json"
