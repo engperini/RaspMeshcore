@@ -56,6 +56,8 @@ def main():
     p.add_argument("--status", type=Path, default=Path("/run/raspmeshcore/radio.json"))
     p.add_argument("--interval", type=float, default=2.0)
     p.add_argument("--retry-max", type=float, default=30.0)
+    p.add_argument("--radio-config", type=Path, default=Path("/etc/raspmeshcore/radio.env"),
+                   help="Required explicit radio settings; no RF until configured")
     args = p.parse_args()
     if args.interval <= 0 or args.retry_max <= 0:
         p.error("interval and retry-max must be positive")
@@ -79,6 +81,10 @@ def main():
                 attempts = 0
                 next_retry = 0.0
                 state, detail = "waiting_usb", "MeshStick USB not detected"
+            elif not args.radio_config.is_file():
+                stop(proc)
+                proc = None
+                state, detail = "needs_configuration", str(args.radio_config)
             elif not args.binary.is_file() or not os.access(args.binary, os.X_OK):
                 stop(proc)
                 proc = None
@@ -100,7 +106,9 @@ def main():
                            "--cs-pin", "0", "--reset-pin", "2",
                            "--busy-pin", "4", "--irq-pin", "6"]
                     try:
-                        proc = subprocess.Popen(cmd)
+                        child_env = os.environ.copy()
+                        child_env["RPI_CONFIG_FILE"] = str(args.radio_config)
+                        proc = subprocess.Popen(cmd, env=child_env)
                         state, detail = "starting", f"pid={proc.pid}"
                     except OSError as e:
                         attempts += 1
