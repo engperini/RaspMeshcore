@@ -2,7 +2,7 @@
 # Safe Pi installer: preserves existing Docker/RemoteTerm/simulator.
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-UPSTREAM="${MESHCORE_RPI_DIR:-$HOME/MeshCoreRPI}"
+UPSTREAM="${MESHCORE_RPI_DIR:-$HOME/MeshCoreRPI-RaspMeshcore-USB}"
 PIN="5f7def6f14fbd0562a81d71c18d93739b65e029c"
 echo "[1/6] Dependencies"
 sudo apt-get update
@@ -18,13 +18,13 @@ if [[ ! -d "$UPSTREAM/.git" ]]; then
   git clone https://github.com/dabeani/MeshCoreRPI.git "$UPSTREAM"
 fi
 if [[ -n "$(git -C "$UPSTREAM" status --porcelain)" ]]; then
-  echo "ERROR: $UPSTREAM contains local changes; refusing to overwrite" >&2
+  echo "ERROR: isolated build checkout contains local changes; refusing to overwrite" >&2
   exit 1
 fi
 git -C "$UPSTREAM" fetch origin "$PIN"
 git -C "$UPSTREAM" checkout --detach "$PIN"
 echo "[4/6] CH341 overlay and native build"
-bash "$ROOT/radio/tools/build-usb-companion.sh"
+MESHCORE_RPI_DIR="$UPSTREAM" bash "$ROOT/radio/tools/build-usb-companion.sh"
 BIN="$UPSTREAM/.pio/build/RaspberryPiMC_native_companion/program"
 test -x "$BIN"
 echo "[5/6] Install isolated systemd service (waiting for USB)"
