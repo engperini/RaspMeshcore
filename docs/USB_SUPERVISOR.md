@@ -33,3 +33,10 @@ O Companion é executado com `--spi-dev-prefix usb_ch341`, CS 0, RESET 2, BUSY 4
 - A inicialização do processo não prova que o rádio esteja recebendo.
 - Não há endpoint HTTP de status; o arquivo JSON está disponível para integração futura com a UI.
 - O supervisor não substitui validação de hardware, nem permite concluir que a solução está pronta para produção.
+
+
+## Bloqueio de segurança de configuração RF
+
+Mesmo após detectar o CH341, o supervisor **não inicia o Companion** sem o arquivo `/etc/raspmeshcore/radio.env` contendo todos os campos `RPI_FREQ_HZ`, `RPI_BW_HZ`, `RPI_SF`, `RPI_CR` e `RPI_TX_DBM`. O estado nesse caso será `needs_configuration`. O arquivo deve ser configurado somente após confirmar a frequência legal aplicável, a rede MeshCore pretendida e os parâmetros suportados pelo rádio. O teste automático usa valores sintéticos e não é recomendação de transmissão.
+
+Esta validação verifica presença dos campos, **não** sua conformidade regulatória ou compatibilidade de RF. Os demais parâmetros de DIO2/TCXO e as permissões USB também exigem teste físico.
