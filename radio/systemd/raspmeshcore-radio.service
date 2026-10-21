@@ -1,0 +1,18 @@
+[Unit]
+Description=RaspMeshcore MeshStick USB radio supervisor
+After=network.target
+# The web UI remains independent; do not bind its lifecycle to the radio.
+
+[Service]
+Type=simple
+User=raspmeshcore
+Group=raspmeshcore
+SupplementaryGroups=plugdev
+RuntimeDirectory=raspmeshcore
+ExecStart=/usr/bin/python3 /opt/raspmeshcore/radio/tools/usb_supervisor.py --binary /opt/meshcorerpi/.pio/build/RaspberryPiMC_native_companion/program
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
