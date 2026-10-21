@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     command: ["python", "-u", "/app/tcp_router.py"]
     volumes:
-      - ./radio/tools/tcp_router.py:/app/tcp_router.py:ro
+      - ${RASPMESH_ROUTER_SCRIPT:-./radio/tools/tcp_router.py}:/app/tcp_router.py:ro
       - ./data/radio:/config:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
