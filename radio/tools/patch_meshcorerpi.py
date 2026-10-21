@@ -49,9 +49,40 @@ body=once(body,'  openSpi();\n  gpioPulseReset();','  if (!usb_transport) openSp
 body=once(body,'  if (cfg.cs_pin >= 0) gpioWrite(cfg.cs_pin, 0);\n\n  spi_ioc_transfer','  if (cfg.cs_pin >= 0) gpioWrite(cfg.cs_pin, 0);\n\n  spi_ioc_transfer') # no change; usb path exits earlier
 # Existing startup GPIO write sets CS high; must not select USB radio before reset.
 body=once(body,'  if (cfg.cs_pin >= 0) gpioWrite(cfg.cs_pin, 1);\n\n  if (!usb_transport) openSpi();','  if (cfg.cs_pin >= 0 && !usb_transport) gpioWrite(cfg.cs_pin, 1);\n\n  if (!usb_transport) openSpi();')
+# Add CH341 object and libusb to both native Companion and Repeater builds.
+pio=args.upstream/"platformio.ini"
+ini=pio.read_text()
+ini=once(ini,'  -I host/rpi_native_cli/src\n  -I lib/ed25519',
+         '  -I host/rpi_native_cli/src\n  -I host/rpi_native_cli/src/raspmeshcore_usb\n  -I lib/ed25519') if False else ini
+# Source filter paths are relative to src/. Both role targets need the CH341 source.
+ini=ini.replace('  +<../host/rpi_native_cli/src/SX1262LinuxRadio.cpp>',
+                '  +<../host/rpi_native_cli/src/SX1262LinuxRadio.cpp>\n  +<../host/rpi_native_cli/src/raspmeshcore_usb/Ch341MeshStickTransport.cpp>')
+if ini.count('Ch341MeshStickTransport.cpp') != 3:
+    raise RuntimeError("Expected three native targets")
+# Native platform builds require explicit libusb link; add to all three target sections.
+for section in ('env:RaspberryPiMC_native','env:RaspberryPiMC_native_repeater','env:RaspberryPiMC_native_companion'):
+    marker='['+section+']'
+    start=ini.index(marker)
+    end=ini.find('\n[',start+len(marker))
+    if end<0:end=len(ini)
+    block=ini[start:end]
+    if 'build_flags =' not in block:
+        raise RuntimeError("No build_flags for "+section)
+    block=block.replace('build_flags =','build_flags =\n  -I host/rpi_native_cli/src/raspmeshcore_usb\n  -L /usr/lib\n  -l usb-1.0',1)
+    ini=ini[:start]+block+ini[end:]
+# Use -lusb-1.0 in link flags too: build_flags may be reordered by PlatformIO.
+# The source is copied into the upstream checkout by the --apply stage.
 if args.apply:
     h.write_text(header)
     c.write_text(body)
+    pio.write_text(ini)
+    import shutil
+    radio=Path(__file__).resolve().parents[1]
+    dest=src/"raspmeshcore_usb"
+    dest.mkdir(exist_ok=True)
+    for name in ("Ch341MeshStickTransport.h","RadioTransport.h"):
+        shutil.copy2(radio/"include"/name,dest/name)
+    shutil.copy2(radio/"src"/"Ch341MeshStickTransport.cpp",dest/"Ch341MeshStickTransport.cpp")
     print("Patched upstream SX1262 radio. Link Ch341MeshStickTransport.cpp and libusb-1.0.")
 else:
     print("PASS: upstream anchors matched; use --apply to modify local checkout")
