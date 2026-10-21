@@ -16,7 +16,12 @@ if ! pkg-config --exists libusb-1.0; then
   echo "Install libusb headers: sudo apt install libusb-1.0-0-dev pkg-config" >&2
   exit 2
 fi
-python3 "$ROOT/radio/tools/patch_meshcorerpi.py" "$UPSTREAM" --apply
+if grep -q "usb_ch341" "$UPSTREAM/host/rpi_native_cli/src/SX1262LinuxRadio.cpp" && grep -q "Ch341MeshStickTransport.cpp" "$UPSTREAM/platformio.ini"; then
+  echo "CH341 overlay already applied; verifying and rebuilding"
+  test -f "$UPSTREAM/host/rpi_native_cli/src/raspmeshcore_usb/Ch341MeshStickTransport.cpp" || { echo "Incomplete overlay" >&2; exit 2; }
+else
+  python3 "$ROOT/radio/tools/patch_meshcorerpi.py" "$UPSTREAM" --apply
+fi
 (cd "$UPSTREAM" && pio run -e RaspberryPiMC_native_companion)
 echo "Built binary: $UPSTREAM/.pio/build/RaspberryPiMC_native_companion/program"
 echo "Hardware and RF operation NOT validated. Configure region before use."
