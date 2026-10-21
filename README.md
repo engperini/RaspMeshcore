@@ -211,3 +211,9 @@ SX1262
 ## Regra principal do projeto
 
 **O Raspberry Pi deve continuar recebendo mensagens, executando bots e operando o rádio mesmo sem celular, sem navegador remoto e com o display apagado.**
+
+## Rádio USB ELECROW MeshStick (migração em desenvolvimento)
+
+O rádio escolhido para a próxima etapa é o **ELECROW MeshStick USB SX1262 915 MHz (CH341 USB–SPI/GPIO)**. A arquitetura de UI, bots, Companion e simulador será preservada. O backend `usb_ch341` é **planejado, ainda não implementado nem validado em RF**; o modo SPI permanece previsto como alternativa. Não há dependência obrigatória do openHop.
+
+Antes da chegada do rádio, execute `bash scripts/meshstick-preflight.sh` para verificar a enumeração USB (somente leitura). Veja [docs/MESHSTICK_USB.md](docs/MESHSTICK_USB.md) para critérios de aceitação e riscos. **Nenhuma configuração de produção foi alterada nesta etapa.**
