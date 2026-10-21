@@ -1,0 +1,25 @@
+# Explicit simulator/USB mode router; UI keeps a stable TCP destination.
+# This overlay does not publish the Companion TCP port or expose it to LAN.
+services:
+  radio-router:
+    image: python:3.13-alpine
+    restart: unless-stopped
+    command: ["python", "-u", "/app/tcp_router.py"]
+    volumes:
+      - ./radio/tools/tcp_router.py:/app/tcp_router.py:ro
+      - ./data/radio:/config:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      MODE_FILE: /config/radio-mode
+      SIMULATOR_HOST: simulator
+      USB_HOST: host.docker.internal
+      USB_PORT: "5000"
+    expose:
+      - "5000"
+  remoteterm:
+    environment:
+      MESHCORE_TCP_HOST: radio-router
+      MESHCORE_TCP_PORT: "5000"
+    depends_on:
+      - radio-router
