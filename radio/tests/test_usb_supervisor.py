@@ -31,9 +31,9 @@ class SupervisorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             config = Path(td) / "radio.env"
             self.assertFalse(mod.radio_config_valid(config))
-            config.write_text("RPI_FREQ_HZ=915000000\\n")
+            config.write_text("RPI_FREQ_HZ=915000000\n")
             self.assertFalse(mod.radio_config_valid(config))
-            config.write_text("RPI_FREQ_HZ=915000000\\nRPI_BW_HZ=62500\\nRPI_SF=8\\nRPI_CR=8\\nRPI_TX_DBM=14\\n")
+            config.write_text("RPI_FREQ_HZ=915000000\nRPI_BW_HZ=62500\nRPI_SF=8\nRPI_CR=8\nRPI_TX_DBM=14\n")
             self.assertTrue(mod.radio_config_valid(config))
 
     def test_missing_usb_stays_waiting(self):
@@ -58,6 +58,8 @@ class SupervisorTests(unittest.TestCase):
             finally:
                 p.terminate()
                 p.wait(timeout=5)
+                if p.stderr:
+                    p.stderr.close()
 
 if __name__ == "__main__":
     unittest.main()
