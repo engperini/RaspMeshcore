@@ -1,0 +1,19 @@
+name: Radio transport contract
+on:
+  push:
+    paths:
+      - 'radio/**'
+      - '.github/workflows/radio-transport.yml'
+  pull_request:
+    paths:
+      - 'radio/**'
+      - '.github/workflows/radio-transport.yml'
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test transport contract
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -pedantic radio/tests/transport_contract_test.cpp -o /tmp/transport-contract-test
+          /tmp/transport-contract-test
