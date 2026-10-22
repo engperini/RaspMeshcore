@@ -1,3 +1,5 @@
+> **Estado do projeto (21/10/2026):** o simulador e o RemoteTerm foram testados no Raspberry Pi 4; o Companion CH341 compilou em ARM64; o supervisor systemd foi testado aguardando o USB; o roteador TCP foi testado com o simulador. **Não houve teste com MeshStick físico, TX/RX, criptografia ou multihop.** O modo kiosk/display ainda não está implementado. Não anunciar como plug-and-play de rádio até concluir essas etapas.
+
 # RaspMeshcore
 
 RaspMeshcore transforma um **Raspberry Pi 4 + LoRa HAT/SX1262** em um terminal MeshCore autônomo.
@@ -211,3 +213,44 @@ SX1262
 ## Regra principal do projeto
 
 **O Raspberry Pi deve continuar recebendo mensagens, executando bots e operando o rádio mesmo sem celular, sem navegador remoto e com o display apagado.**
+
+## Rádio USB ELECROW MeshStick (migração em desenvolvimento)
+
+O rádio escolhido para a próxima etapa é o **ELECROW MeshStick USB SX1262 915 MHz (CH341 USB–SPI/GPIO)**. A arquitetura de UI, bots, Companion e simulador será preservada. O backend `usb_ch341` **foi implementado e compilado em ARM64, mas ainda não validado com rádio físico**; o modo SPI permanece previsto como alternativa. Não há dependência obrigatória do openHop.
+
+Antes da chegada do rádio, execute `bash scripts/meshstick-preflight.sh` para verificar a enumeração USB (somente leitura). Veja [docs/MESHSTICK_USB.md](docs/MESHSTICK_USB.md) para critérios de aceitação e riscos. **A instalação no Raspberry do desenvolvedor foi realizada separadamente da branch main, sem validação de RF.**
+
+
+## Instalação e operação USB (experimental)
+
+Para novos usuários, a instalação padrão da `main` continua sendo o simulador via `bash scripts/install.sh`. O instalador USB da branch de desenvolvimento instala dependências, compila o Companion nativo e registra o supervisor systemd. **Ele não configura automaticamente o RemoteTerm para o rádio USB.**
+
+Documentação operacional:
+
+- [docs/USB_SUPERVISOR.md](docs/USB_SUPERVISOR.md) — serviço, estados, logs, reinício e limitações.
+- [docs/RADIO_MODE.md](docs/RADIO_MODE.md) — roteador TCP e seleção explícita entre simulador e USB.
+- [docs/MESHSTICK_USB.md](docs/MESHSTICK_USB.md) — identificação CH341 e testes de aceitação.
+- [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) — critérios antes de anunciar instalação completa.
+
+Não utilize `git reset --hard` para atualizar uma instalação. Faça backup de `.env` e `data/remoteterm` antes de alterar perfis Compose. Não exponha a interface ou a porta 5000 à Internet sem controles adicionais.
+
+
+### Preparação experimental com um comando (clone limpo)
+
+Requer Docker Engine + Compose, acesso `sudo` e Raspberry Pi OS 64-bit. Não instala Docker automaticamente. A partir da branch USB:
+
+```bash
+git clone -b feature/meshstick-usb-ch341 https://github.com/engperini/RaspMeshcore.git
+cd RaspMeshcore
+bash scripts/setup-usb.sh
+```
+
+O comando instala dependências nativas, compila o Companion CH341, configura o supervisor systemd e inicia RemoteTerm, simulador e roteador TCP. O modo inicial é **simulador**, inclusive sem MeshStick. Configure `RASPMESH_BIND` em `.env` para acessar pela LAN; o padrão é loopback. Repetir o comando deve preservar o banco `data/remoteterm` e o checkout isolado; esse fluxo ainda requer teste em instalação limpa e CI final. **Não implica transmissão RF funcional.**
+
+Diagnóstico rápido:
+
+```bash
+sudo systemctl is-active raspmeshcore-radio
+cat /tmp/raspmeshcore-radio.json
+sudo docker compose -p raspmeshcore -f compose.yaml -f compose.simulator.yaml -f compose.radio-router.yaml ps
+```

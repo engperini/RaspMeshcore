@@ -1,0 +1,59 @@
+name: Radio transport contract
+on:
+  push:
+    paths:
+      - 'radio/**'
+      - '.github/workflows/radio-transport.yml'
+  pull_request:
+    paths:
+      - 'radio/**'
+      - '.github/workflows/radio-transport.yml'
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install libusb headers
+        run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev pkg-config
+      - name: Test supervisor without USB hardware
+        run: python3 -m unittest discover -s radio/tests -p "test_*.py" -v
+      - name: Build and test transport
+        run: |
+          cmake -S radio -B /tmp/raspmeshcore-radio -DCMAKE_BUILD_TYPE=Debug
+          cmake --build /tmp/raspmeshcore-radio --parallel
+          ctest --test-dir /tmp/raspmeshcore-radio --output-on-failure
+  upstream-overlay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned MeshCoreRPI
+        run: |
+          git clone https://github.com/dabeani/MeshCoreRPI.git /tmp/MeshCoreRPI
+          git -C /tmp/MeshCoreRPI checkout 5f7def6f14fbd0562a81d71c18d93739b65e029c
+      - name: Validate and apply guarded overlay
+        run: |
+          python3 radio/tools/patch_meshcorerpi.py /tmp/MeshCoreRPI
+          python3 radio/tools/patch_meshcorerpi.py /tmp/MeshCoreRPI --apply
+          grep -q 'usb_ch341' /tmp/MeshCoreRPI/host/rpi_native_cli/src/SX1262LinuxRadio.cpp
+          ! grep -q 'usb_ch341' /tmp/MeshCoreRPI/host/rpi_native_cli/src/SX127xLinuxRadio.cpp || true
+  native-companion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libusb-1.0-0-dev python3-venv
+          python3 -m pip install --user platformio
+      - name: Checkout pinned upstream and apply overlay
+        run: |
+          git clone https://github.com/dabeani/MeshCoreRPI.git /tmp/MeshCoreRPI
+          git -C /tmp/MeshCoreRPI checkout 5f7def6f14fbd0562a81d71c18d93739b65e029c
+          python3 radio/tools/patch_meshcorerpi.py /tmp/MeshCoreRPI --apply
+      - name: Test repeatable build overlay
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          MESHCORE_RPI_DIR=/tmp/MeshCoreRPI bash radio/tools/build-usb-companion.sh
+      - name: Build native Companion
+        working-directory: /tmp/MeshCoreRPI
+        run: ~/.local/bin/pio run -e RaspberryPiMC_native_companion

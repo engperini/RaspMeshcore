@@ -1,0 +1,9 @@
+# USB Companion on the host, while keeping simulator and UI untouched.
+# Use with: docker compose -f compose.yaml -f compose.simulator.yaml -f compose.usb.yaml up -d
+# Explicit USB mode; if USB absent RemoteTerm may report disconnected.
+# To return to simulator: use the normal simulator profile without this override.
+services:
+  remoteterm:
+    environment:
+      MESHCORE_TCP_HOST: host.docker.internal
+      MESHCORE_TCP_PORT: "5000"
