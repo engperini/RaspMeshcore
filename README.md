@@ -154,7 +154,7 @@ cd RaspMeshcore
 bash scripts/install.sh
 ```
 
-Escolha **2** para subir RemoteTerm + Companion simulado. Abra `http://127.0.0.1:8080` no navegador do próprio Pi. Para abrir de outro computador ou smartphone na mesma rede, edite `.env`, configure `RASPMESH_BIND` com o IPv4 local do Pi e execute novamente o instalador. Acesse `http://IP_DO_PI:8080` no outro dispositivo. Sem autenticação configurada, use apenas em uma rede local confiável; não publique a porta na Internet.
+Escolha **2** para subir RemoteTerm + Companion simulado. Por padrão, a interface escuta em todas as interfaces do Raspberry Pi (`RASPMESH_BIND=0.0.0.0`): abra `http://IP_DO_PI:8080` de outro dispositivo na mesma LAN ou `http://127.0.0.1:8080` no próprio Pi. Para descobrir o IP: `hostname -I`. Para restringir ao acesso local, altere `.env` para `RASPMESH_BIND=127.0.0.1` e recrie o container. **A interface não deve ser exposta à Internet sem autenticação, HTTPS e controles de rede.**
 
 Diagnóstico:
 ```bash
